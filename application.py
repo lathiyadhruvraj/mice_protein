@@ -32,6 +32,7 @@ def home():
 @app.route("/predict", methods=['GET', 'POST'])
 @app.route("/predict_default", methods=['GET', 'POST'])
 def predictRouteClient():
+    global predict, upload
     try:
         if request.json is not None:
             path = request.json['filepath']
@@ -47,7 +48,7 @@ def predictRouteClient():
             return Response("Prediction File created at %s!!!" % path)
 
         elif request.form is not None:
-            global predict, upload
+            
             if (request.form['button'] == "Predict My File") and (upload == 1):
                 predict = 1
                 upload = 0
@@ -70,6 +71,7 @@ def predictRouteClient():
 
             elif request.form['button'] == "Predict Default Available File":
                 predict = 1
+                upload = 0
                 print('default call')
                 path = "Prediction_Batch_Files"
 
@@ -93,9 +95,10 @@ def predictRouteClient():
     except KeyError:
         return Response("Error Occurred! %s" % KeyError)
     except Exception as e:
-        head = e
-        return render_template('index.html', head=head, result="MAKE SURE YOU ARE CLICKING UPLOAD BUTTON "
-                                                               "AND CHECK PROPER FILE FORMAT AS WELL")
+        warn = e
+        predict = 0
+        message = "MAKE SURE YOU ARE CHOOSING A FILE BEFORE CLCIKING UPLOAD BUTTON AND CHECK PROPER FILE FORMAT AS WELL"
+        return render_template('index.html', warn=warn, message=message)
 
 
 @app.route("/train", methods=['GET', 'POST'])
@@ -124,7 +127,7 @@ def trainRouteClient():
     return Response("Training successful!!")
 
 
-@app.route("/upload_custom_files", methods=["GET", "POST"])
+@app.route("/upload_custom_files", methods=["POST"])
 def upload_files():
     try:
         if request.method == "POST":
@@ -148,7 +151,7 @@ def upload_files():
                 message = " Only excel file allowed (.xls)"
                 return render_template('index.html', message=message)
 
-        return render_template('index.html')
+        return render_template('index.html', message="CHOOSE A FILE")
 
     except Exception as e:
         message = " File Not Uploaded. Make sure you are selecting a file"
@@ -173,7 +176,8 @@ def download_file():
             return render_template('index.html', head=head)
 
     except Exception as e:
-        return Response("Error Occurred! %s" % e)
+        warn = e
+        return render_template('index.html', warn=warn)
 
 
 # port = int(os.getenv("PORT", 5001))

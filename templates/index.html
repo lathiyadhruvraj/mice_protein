@@ -3,34 +3,152 @@
     <head>
         <title>Mice Protein Prediction</title>
         <style>
-            h1 { color:  #0044cc;
+            h1 { color: #7baecf;
                  text-align: center;}
+
+            .header {
+                padding: 20px;
+                text-align: center;
+                background: #003118;
+                color: white;
+                font-size: 30px;
+                opacity: 80%;
+                }
+
+                                
+            .bg {
+                /* The image used */
+                background-image: url("/static/images/mice3.jpg");
+
+                /* Full height */
+                height: 100%; 
+
+                /* Center and scale the image nicely */
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: cover          }
+            
+            .button {
+                position: relative;
+                background-color: #4CAF50;
+                border: none;
+                font-size: 20px;
+                color: #FFFFFF;
+                padding: 10px 20px 10px 20px ;
+                text-align: center;
+                transition-duration: 0.4s;
+                text-decoration: none;
+                overflow: hidden;
+                cursor: pointer;
+                display: inline-block;
+                border-radius: 10px
+                }
+            
+            .button:active {
+                background-color: #3e8e41;
+                box-shadow: 0 5px #111010;
+                transform: translateY(4px)
+                }
+            
+            .button:after {
+                content: "";
+                background: #f1f1f1;
+                display: block;
+                position: absolute;
+                padding-top: 300%;
+                padding-left: 350%;
+                margin-left: -20px !important;
+                margin-top: -120%;
+                opacity: 0;
+                transition: all 0.8s
+                }
+            
+            .button:active:after {
+                padding: 0;
+                margin: 0;
+                opacity: 1;
+                transition: 0s
+                }
+
+            .button1 {
+                background-color: white; 
+                color: black; 
+                border-radius: 10px;
+                opacity: 60%;
+                /* border: 2px solid rgb(250, 0, 0) */
+                }
+
+            .button1:hover {
+                transform: translateY(4px);
+                background-color: #f7ba15;
+                opacity: 100%;
+                box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+                color: white
+                }
+            
+            .button2 {
+                background-color: white; 
+                color: black;
+                border-radius: 10px; 
+                opacity: 60%;
+                /* border: 2px solid #008CBA */
+                }
+
+            .button2:hover {
+                transform: translateY(4px);
+                background-color: #54ba00;
+                box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+                color: white;
+                opacity: 100%;
+                }
+                            
+            .button3 {
+                background-color: white; 
+                color: black;
+                border-radius: 10px; 
+                opacity: 60%;
+                /* border: 2px solid #008CBA */
+                }
+
+            .button3:hover {
+                transform: translateY(4px);
+                background-color: #4100ba;
+                box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+                color: white;
+                opacity: 100%;
+                }
+
+
         </style>
     </head>
-    <body bgcolor='#b3ffb3'>
-        <br><h1>MICE PROTEIN PREDICTION</h1><br><br>
-
-        <center>
-            <div>
-                <form action="/upload_custom_files" method="POST" enctype="multipart/form-data">
-                    <input id="file" type="file" name="file">
-                    <button type="submit">Upload</button>
-                </form><br/>
-                 <p>{{ message }}</p><br/>
-                 <p>{{ warn }}</p>
-                <form action="/predict" method="POST">
-                    <input type="submit" name="button" value="Predict My File">
-                </form><p> OR </p>
-                <form action="/predict_default" method="POST">
-                    <input type="submit" name="button" value="Predict Default Available File">
-                </form><br/>
-                <form action="/download" method="POST">
-                    <input type="submit" name="button" value="download">
-                </form><br/>
-                <h1> {{ head }} </h1><br/>
-                <p>{{ result }}</p>
-            </div>
-        </center>
-
+    <body class="bg">
+        <div >
+            <h1 class="header">Mice Protein Prediction</h1><br>
+        </div>
+        <div>
+            <form action="/upload_custom_files" method="POST" enctype="multipart/form-data">
+                <input class="button button1" id="file" type="file" name="file">
+                <button class="button button1" type="submit">Upload</button>
+            </form><br/>
+            
+            <p>{{ message }}</p><br/>
+            <p>{{ warn }}</p>
+            
+            <form action="/predict" method="POST">
+                <input type="submit" class="button button1" name="button" value="Predict My File">
+            </form><p> OR </p>
+            
+            <form action="/predict_default" method="POST">
+                <input type="submit" class="button button2" name="button" value="Predict Default Available File">
+            </form><br/>
+            
+            <form action="/download" method="POST">
+                <input type="submit" class="button button3" style="vertical-align:middle" name="button" value="download">
+            </form><br/>
+            
+            <h1> {{ head }} </h1><br/>
+            <p>{{ result }}</p>
+        
+        </div>
     </body>
 </html>
