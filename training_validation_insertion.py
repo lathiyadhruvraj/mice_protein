@@ -1,27 +1,35 @@
 from Logging_Layer import logger
 from Training_RawData_Validation.rawValidation import RawDataValidation
 from DataTypeValidation_Insertion_Training.dataTypeValidation import dBOperation
-
+from DataStax_Astra_Connect.connect_database import Cassandra
+import os
 
 class TrainValidation:
 
     def __init__(self, path):
         self.raw_data = RawDataValidation(path)
-
         self.dbOperations = dBOperation()
         self.file_object = open("Training_Logs/Training_Main_Log.txt", 'a+')
+        self.cassandra = Cassandra(self.file_object)
         self.log_writer = logger.app_logger()
 
     def train_validation(self):
         try:
             self.log_writer.log(self.file_object, 'Start of Validation on files for prediction!!')
 
+            #getting files from cassandra
+            self.cassandra.connect_datastax("mice_protein")
+
+            data = self.cassandra.fetch_data()
+
+            path = os.path.join(os.getcwd(), 'Training_Batch_Files')
+            self.cassandra.data_to_excel(data=data, path=path)
+
             # extracting values from prediction schema
             LengthOfDateStampInFile, LengthOfTimeStampInFile, ColName, noofcolumns = self.raw_data.valuesFromSchema()
 
             # getting the regex defined to validate filename
             regex = self.raw_data.manualRegexCreation()
-
             # validating filename of prediction files
             self.raw_data.validationFileNameRaw(regex, LengthOfDateStampInFile, LengthOfTimeStampInFile)
 
@@ -61,5 +69,5 @@ class TrainValidation:
             print("VALIDATION FINISH")
 
         except Exception as e:
-            print("EXCEPTION")
+            print("EXCEPTION", e)
             raise e

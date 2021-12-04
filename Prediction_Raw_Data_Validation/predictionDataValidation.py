@@ -153,17 +153,17 @@ class Prediction_Data_validation:
                     splitAtDot = (re.split('_', splitAtDot[0]))
                     if len(splitAtDot[2]) == LengthOfDateStampInFile:
                         if len(splitAtDot[3]) == LengthOfTimeStampInFile:
-                            shutil.copy("Prediction_Batch_files/" + filename, "Prediction_Raw_Files_Validated/Good_Raw")
+                            shutil.copy(os.path.join(self.Batch_Directory, filename) , "Prediction_Raw_Files_Validated/Good_Raw")
                             self.logger.log(f, "Valid File name!! File moved to GoodRaw Folder :: %s" % filename)
 
                         else:
-                            shutil.copy("Prediction_Batch_files/" + filename, "Prediction_Raw_Files_Validated/Bad_Raw")
+                            shutil.copy(os.path.join(self.Batch_Directory, filename), "Prediction_Raw_Files_Validated/Bad_Raw")
                             self.logger.log(f, "Invalid File Name!! File moved to Bad Raw Folder :: %s" % filename)
                     else:
-                        shutil.copy("Prediction_Batch_files/" + filename, "Prediction_Raw_Files_Validated/Bad_Raw")
+                        shutil.copy(os.path.join(self.Batch_Directory, filename), "Prediction_Raw_Files_Validated/Bad_Raw")
                         self.logger.log(f, "Invalid File Name!! File moved to Bad Raw Folder :: %s" % filename)
                 else:
-                    shutil.copy("Prediction_Batch_files/" + filename, "Prediction_Raw_Files_Validated/Bad_Raw")
+                    shutil.copy(os.path.join(self.Batch_Directory, filename), "Prediction_Raw_Files_Validated/Bad_Raw")
                     self.logger.log(f, "Invalid File Name!! File moved to Bad Raw Folder :: %s" % filename)
 
             f.close()
@@ -179,6 +179,7 @@ class Prediction_Data_validation:
         try:
             f = open("Prediction_Logs/columnValidationLog.txt", 'a+')
             self.logger.log(f, "Column Length Validation Started!!")
+            
             for file in listdir('Prediction_Raw_Files_Validated/Good_Raw/'):
                 csv = pd.read_excel("Prediction_Raw_Files_Validated/Good_Raw/" + file)
                 if csv.shape[1] == NumberofColumns:
@@ -202,9 +203,32 @@ class Prediction_Data_validation:
 
         f.close()
 
-    def deletePredictionFile(self):
-        if os.path.exists('Prediction_Output_File/Predictions.csv'):
-            os.remove('Prediction_Output_File/Predictions.csv')
+
+    def deletePredictedFiles(self):
+        # if os.path.exists('Prediction_Output_File/Predictions.csv'):
+        #     os.remove('Prediction_Output_File/Predictions.csv')
+
+        dir_Prediction_Output_File = os.listdir("Prediction_Output_File")
+
+        filtered_Output_files = [file for file in dir_Prediction_Output_File if file.endswith(".csv")]
+        for file in filtered_Output_files:
+            path_to_file = os.path.join("Prediction_Output_File", file)
+            os.remove(path_to_file)
+
+        dir_Prediction_FileFromDB = os.listdir("Prediction_FileFromDB")
+
+        filtered_filesFromDB = [file for file in dir_Prediction_FileFromDB if file.endswith(".csv")]
+        for file in filtered_filesFromDB:
+            path_to_file = os.path.join("Prediction_FileFromDB", file)
+            os.remove(path_to_file)
+
+        dir_plots = os.listdir("plots")
+
+        filtered_filesFromDB = [file for file in dir_plots if file.endswith(".png")]
+        for file in filtered_filesFromDB:
+            path_to_file = os.path.join("plots", file)
+            os.remove(path_to_file)
+
 
     def validateMissingValuesInWholeColumn(self):
 

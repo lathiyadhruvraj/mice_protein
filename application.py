@@ -1,28 +1,22 @@
-import glob
+import time
+from flask.helpers import send_file
 # from wsgiref import simple_server
 from werkzeug.utils import secure_filename
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, flash
 from flask import Response
+import shutil
 import os
 from prediction_Validation_Insertion import pred_validation
 from predictFromModel import prediction
 from trainingModel import TrainModel
 from training_validation_insertion import TrainValidation
 
-# os.putenv('LANG', 'en_US.UTF-8')
-# os.putenv('LC_ALL', 'en_US.UTF-8')
-
 application = Flask(__name__)
 app = application
-
-
-app.config["FILE_DOWNLOAD"] = os.path.join(os.getcwd(), "Prediction_Output_File")
-
-app.config["FILE_UPLOADS"] = os.path.join(os.getcwd(), "Prediction_Custom_Files")
+app.config['SECRET_KEY'] = "thisissecretkey"
 
 predict = 0
 upload = 0
-
 
 @app.route("/", methods=['GET'])
 def home():
@@ -30,7 +24,7 @@ def home():
 
 
 @app.route("/predict", methods=['GET', 'POST'])
-@app.route("/predict_default", methods=['GET', 'POST'])
+# @app.route("/predict_default", methods=['POST'])
 def predictRouteClient():
     global predict, upload
     try:
@@ -43,62 +37,44 @@ def predictRouteClient():
 
             pred = prediction(path)  # object initialization
 
-            # predicting for dataset present in database
-            path = pred.predictionFromModel()
+            path = pred.predictionFromModel() # predicting for dataset present in database
+
             return Response("Prediction File created at %s!!!" % path)
 
-        elif request.form is not None:
-            
-            if (request.form['button'] == "Predict My File") and (upload == 1):
-                predict = 1
-                upload = 0
-                print('custom call')
+        if request.form is not None:
+                
+            if (request.form['button'] == "Predict My Files") and (upload == 1):
                 path = "Prediction_Custom_Files"
-
-                pred_val = pred_validation(path)  # object initialization
-
-                pred_val.prediction_validation()  # calling the prediction_validation function
-
-                pred = prediction(path)  # object initialization
-
-                # predicting for dataset present in database
-                path, res_head = pred.predictionFromModel()
-                message = "Prediction File created at " + str(path)
-
-                # return Response("Prediction File created at %s!!!" % path)
-                return render_template('index.html', message=message, head="TOP FIVE PREDICTED ROWS",
-                                       result=res_head)
-
-            elif request.form['button'] == "Predict Default Available File":
-                predict = 1
-                upload = 0
-                print('default call')
+                print('custom call')
+            elif request.form['button'] == "Predict Default Files": 
                 path = "Prediction_Batch_Files"
+                print('default call')
+            
+            predict, upload = 1, 0
+            
+            pred_val = pred_validation(path)  # object initialization
 
-                pred_val = pred_validation(path)  # object initialization
+            pred_val.prediction_validation()  # calling the prediction_validation function
 
-                pred_val.prediction_validation()  # calling the prediction_validation function
+            pred = prediction(path)  # object initialization
 
-                pred = prediction(path)  # object initialization
+            pred.predictionFromModel()  # predicting for dataset present in database
 
-                # predicting for dataset present in database
-                path, res_head = pred.predictionFromModel()
-                message = "Prediction File created at " + str(path)
-                # return Response("Prediction File created at %s!!!" % path)
-                return render_template('index.html', message=message, head="TOP FIVE PREDICTED ROWS",
-                                       result=res_head)
-            message = "UPLOAD FILE TO PREDICT FILE OR CHOOSE DEFAULT FILE"
-            return render_template('index.html', message=message)
+            flash("Prediction files are ready! You can download !", "success")
+            return render_template('index.html')
+                
+        flash("UPLOAD FILES TO PREDICT OR CHOOSE DEFAULT FILES OPTION", "info")
+        return render_template('index.html')
 
     except ValueError:
         return Response("Error Occurred! %s" % ValueError)
     except KeyError:
         return Response("Error Occurred! %s" % KeyError)
     except Exception as e:
-        warn = e
         predict = 0
-        message = "MAKE SURE YOU ARE CHOOSING A FILE BEFORE CLCIKING UPLOAD BUTTON AND CHECK PROPER FILE FORMAT AS WELL"
-        return render_template('index.html', warn=warn, message=message)
+        flash(e, "warn")
+        flash("Make sure you are selecting atleast 1 file AND if uploaded then check PROPER FOR FILE FORMAT", "info")
+        return render_template('index.html')
 
 
 @app.route("/train", methods=['GET', 'POST'])
@@ -132,31 +108,41 @@ def upload_files():
     try:
         if request.method == "POST":
             global predict, upload
-            # predict = 1
             upload = 1
-            f = request.files["file"]
-            files = glob.glob("Prediction_Custom_Files/*")
-            for fn in files:
-                os.remove(fn)
 
-            if request.files and (f.filename.split(".")[1] == "xls"):
-                f.save(os.path.join(app.config["FILE_UPLOADS"], secure_filename(f.filename)))
-                print("File Saved")
-                message = str(f.filename) + " Loaded Successfully. Press Predict My File and wait a minute."
-                warn = "DO NOT REFRESH/DO NOT PRESS BUTTONS while YOUR FILE IN PROCESS"
+            files_list = request.files.getlist("file")            
+            
+            file_saved = []
+            file_not_saved = []
+            file_saved.clear()
+            file_not_saved.clear()
 
-                return render_template('index.html', message=message, warn=warn)
+            for file in files_list:
+                if file.filename.split(".")[1] == "xls":
+                    file.save(os.path.join(os.getcwd(), "Prediction_Custom_Files", secure_filename(file.filename)))
+                    flash(str(file.filename) + " File uploaded", "success")
+                    file_saved.append(file.filename)
+                else:
+                    file_not_saved.append(file.filename)
+                    flash("File Uploaded is not in .xls Format", "warn")
 
-            else:
-                message = " Only excel file allowed (.xls)"
-                return render_template('index.html', message=message)
 
-        return render_template('index.html', message="CHOOSE A FILE")
+            if len(file_saved) > 0:
+                flash("To Predict Press PREDICT MY FILES and wait until process gets completed.", "info")
+                flash("DO NOT REFRESH/DO NOT PRESS BUTTONS while YOUR FILE/S IN PROCESS", "warn")
+                if len(file_not_saved) > 0:
+                    message = ' '.join(map(str, file_not_saved)) +  "\n File/s Rejected. Invalid file extension. Only (.xls) allowed"
+                    flash(message, "error")
+                    return render_template('index.html')
+                
+                return render_template('index.html')
+        
+        flash("Upload proper file/s", "info")
+        return render_template('index.html')
 
     except Exception as e:
-        message = " File Not Uploaded. Make sure you are selecting a file"
-        warn = e
-        return render_template('index.html', message=message, warn=warn)
+        flash(" File Not Uploaded. Make sure you are selecting a file", "error")
+        return render_template('index.html')
 
 
 @app.route("/download", methods=['POST'])
@@ -165,24 +151,29 @@ def download_file():
     try:
         if predict:
             predict = 0
-            fname = "Predictions.csv"
-            file = os.path.join(app.config["FILE_DOWNLOAD"], fname)
-            if os.path.isfile(file):
-                return send_file(file, mimetype='text/csv', as_attachment=True, attachment_filename=fname)
+            
+            shutil.make_archive("Prediction_Files", "zip", "Prediction_Output_File")
 
+
+            return send_file('Prediction_Files.zip',
+                    mimetype = 'zip',
+                    attachment_filename= 'Prediction_Files.zip',
+                    as_attachment = True)
+           
         else:
             head = "PREDICTION FILE NOT AVAILABLE," \
                    " UPLOAD YOUR FILE THEN PRESS PREDICT MY FILE OR PRESS PREDICT AVAILABLE FILE"
-            return render_template('index.html', head=head)
+            flash(head, "error")
+            return render_template('index.html')
 
     except Exception as e:
-        warn = e
-        return render_template('index.html', warn=warn)
+        flash(e, "error")
+        return render_template('index.html')
 
 
 # port = int(os.getenv("PORT", 5001))
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, threaded = True)
     # host = '0.0.0.0'
     # httpd = simple_server.make_server(host, port, app)
     # print("Serving on %s %d" % (host, port))

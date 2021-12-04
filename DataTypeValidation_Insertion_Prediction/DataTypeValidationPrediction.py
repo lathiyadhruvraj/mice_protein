@@ -1,11 +1,10 @@
 import shutil
 import sqlite3
 # from datetime import datetime
+from Logging_Layer import logger
 from os import listdir
 import os
 import csv
-from Logging_Layer.logger import app_logger
-
 
 class dBOperation:
 
@@ -13,7 +12,7 @@ class dBOperation:
         self.path = 'Prediction_Database/'
         self.badFilePath = "Prediction_Raw_Files_Validated/Bad_Raw"
         self.goodFilePath = "Prediction_Raw_Files_Validated/Good_Raw"
-        self.logger = app_logger()
+        self.logger = logger.app_logger()
 
     def dataBaseConnection(self, DatabaseName):
 
@@ -23,49 +22,62 @@ class dBOperation:
             file = open("Prediction_Logs/DataBaseConnectionLog.txt", 'a+')
             self.logger.log(file, "Opened %s database successfully" % DatabaseName)
             file.close()
+            return conn
         except ConnectionError:
+            print("CONNECTION ERROR")
+            conn.close()
+            
             file = open("Prediction_Logs/DataBaseConnectionLog.txt", 'a+')
             self.logger.log(file, "Error while connecting to database: %s" % ConnectionError)
             file.close()
             raise ConnectionError
-        return conn
+        
 
-    def createTableDb(self, DatabaseName, column_names):
+    def createTableDb(self, column_names):
 
         try:
+            files_in_directory = os.listdir("Prediction_Database")
 
-            conn = self.dataBaseConnection(DatabaseName)
-            c = conn.cursor()
-            c.execute('DROP TABLE IF EXISTS Good_Raw_Data;')
-            # c.execute("SELECT count(name)  FROM sqlite_master WHERE type = 'table' AND name = 'Good_Raw_Data'")
-            # if c.fetchone()[0] == 1:
-            #     conn.close()
-            #     file = open("Training_Logs/DbTableCreateLog.txt", 'a+')
-            #     self.logger.log(file, "Tables created successfully!!")
-            #
-            #     self.logger.log(file, "Closed %s database successfully" % DatabaseName)
-            #     file.close()
-            #
-            # else:
+            for file in files_in_directory:
+                path_to_file = os.path.join("Prediction_Database", file)
+                os.remove(path_to_file)
 
-            for name, type_ in column_names.items():
-                try:
-                    conn.execute('ALTER TABLE Good_Raw_Data ADD COLUMN {column_name} {dataType};'
-                                 .format(column_name=name, dataType=type_))
-
-                except:
-                    conn.execute('CREATE TABLE IF NOT EXISTS Good_Raw_Data ({column_name} {dataType} UNIQUE);'.format(
-                            column_name=name, dataType=type_))
-                    continue
-
-            conn.close()
-
+            only_files = [f for f in listdir(self.goodFilePath)]
             file = open("Training_Logs/DbTableCreateLog.txt", 'a+')
-            self.logger.log(file, "Tables created successfully!!")
-            file.close()
 
-            file = open("Training_Logs/DataBaseConnectionLog.txt", 'a+')
-            self.logger.log(file, "Closed %s database successfully" % DatabaseName)
+            for filename in only_files: 
+                tablename = "Table_" + str(filename.split(".")[0] )
+                conn = self.dataBaseConnection(tablename)
+                c = conn.cursor()
+                c.execute('DROP TABLE IF EXISTS {table};'.format(table = tablename))
+                # c.execute("SELECT count(name)  FROM sqlite_master WHERE type = 'table' AND name = 'Good_Raw_Data'")
+                # if c.fetchone()[0] == 1:
+                #     conn.close()
+                #     file = open("Training_Logs/DbTableCreateLog.txt", 'a+')
+                #     self.logger.log(file, "Tables created successfully!!")
+                #
+                #     self.logger.log(file, "Closed %s database successfully" % DatabaseName)
+                #     file.close()
+                #
+                # else:
+
+                for name, type_ in column_names.items():
+                    try:
+                        conn.execute('ALTER TABLE {table} ADD COLUMN {column_name} {dataType};'
+                                    .format(table=tablename, column_name=name, dataType=type_))
+
+                    except:
+                        conn.execute('CREATE TABLE IF NOT EXISTS {table} ({column_name} {dataType} UNIQUE);'.format(
+                                table=tablename, column_name=name, dataType=type_))
+                        continue
+                
+                self.logger.log(file, "Table %s created successfully!!" % tablename)
+
+                conn.close()
+            # file.close()
+
+            # file = open("Training_Logs/DataBaseConnectionLog.txt", 'a+')
+            self.logger.log(file, "Closed database successfully")
             file.close()
 
         except Exception as e:
@@ -73,13 +85,13 @@ class dBOperation:
             self.logger.log(file, "Error while creating table: %s " % e)
             file.close()
             file = open("Training_Logs/DataBaseConnectionLog.txt", 'a+')
-            self.logger.log(file, "Closed %s database successfully" % DatabaseName)
+            self.logger.log(file, "Closed database successfully")
             file.close()
             raise e
 
-    def insertIntoTableGoodData(self, Database):
+    def insertIntoTableGoodData(self):
 
-        conn = self.dataBaseConnection(Database)
+        
         goodFilePath = self.goodFilePath
         badFilePath = self.badFilePath
         only_files = [f for f in listdir(goodFilePath)]
@@ -87,19 +99,21 @@ class dBOperation:
 
         for file in only_files:
             try:
-
+                conn = self.dataBaseConnection("Table_" + str(file).split(".")[0])
                 with open(goodFilePath + '/' + file, "r") as f:
                     # next(f)
                     reader = csv.reader(f, delimiter="\n")
                     for line in enumerate(reader):
                         entries = tuple(line[1][0].split(sep=','))
                         try:
-                            conn.execute('INSERT OR REPLACE INTO Good_Raw_Data values {values}'.format(values=entries))
+                            conn.execute('INSERT OR REPLACE INTO {table} values {values}'.format(table="Table_"+ str(file.split(".")[0]),
+                                                         values=entries))
                             conn.commit()
                         except Exception as e:
                             raise e
                     self.logger.log(log_file, " %s: File loaded successfully!!" % file)
-
+                conn.close()
+                
             except Exception as e:
 
                 conn.rollback()
@@ -110,40 +124,43 @@ class dBOperation:
                 conn.close()
                 raise e
 
-        conn.close()
         log_file.close()
 
-    def selectingDatafromtableintocsv(self, Database):
+    def selectingDatafromtableintocsv(self):
 
         fileFromDb = 'Prediction_FileFromDB/'
-        fileName = 'InputFile.csv'
         log_file = open("Prediction_Logs/ExportToCsv.txt", 'a+')
+        only_files = [f for f in listdir("Prediction_Database")]
         try:
-            conn = self.dataBaseConnection(Database)
-            sqlSelect = "SELECT *  FROM Good_Raw_Data"
-            cursor = conn.cursor()
+            for file in only_files:
+            # for filename in only_files: 
+                tablename = str(file.split(".")[0] )
+                conn = self.dataBaseConnection(tablename)
+                # c = conn.cursor()
+                # conn = self.dataBaseConnection(Database)
+                sqlSelect = "SELECT *  FROM {table}".format(table= str(file.split(".")[0]))
+                cursor = conn.cursor()
+                cursor.execute(sqlSelect)
 
-            cursor.execute(sqlSelect)
+                results = cursor.fetchall()
+                # Get the headers of the csv file
+                # headers = [i[0] for i in cursor.description]
 
-            results = cursor.fetchall()
+                # Make the CSV output directory
+                if not os.path.isdir(fileFromDb):
+                    os.makedirs(fileFromDb)
 
-            # Get the headers of the csv file
-            # headers = [i[0] for i in cursor.description]
+                # Open CSV file for writing.
+                fileName = str(file.split(".")[0]) + '.csv'
+                
+                with open(os.path.join(fileFromDb + fileName), 'w', newline='') as csvfile:
+                    csvwriter = csv.writer(csvfile, delimiter=',',
+                                    lineterminator='\r\n', quoting=csv.QUOTE_ALL, escapechar='\\')
+                    csvwriter.writerows(results)
 
-            # Make the CSV output directory
-            if not os.path.isdir(fileFromDb):
-                os.makedirs(fileFromDb)
-
-            # Open CSV file for writing.
-            csvFile = csv.writer(open(fileFromDb + fileName, 'w', newline=''), delimiter=',',
-                                 lineterminator='\r\n', quoting=csv.QUOTE_ALL, escapechar='\\')
-
-            # Add the headers and data to the CSV file.
-            # csvFile.writerow(headers)
-            csvFile.writerows(results)
-
-            self.logger.log(log_file, "File exported successfully!!!")
+                self.logger.log(log_file, "File exported successfully!!!")
+                conn.close()
 
         except Exception as e:
-            self.logger.log(log_file, "File exporting failed. Error : %s" % e)
+            self.logger.log(log_file, "Exception in selectingDatafromtableintocsv method. File exporting failed. Error : %s" % e)
             raise e

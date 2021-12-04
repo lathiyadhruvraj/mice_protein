@@ -2,32 +2,68 @@
 <html>
     <head>
         <title>Mice Protein Prediction</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
         <style>
+        
             h1 { color: #7baecf;
                  text-align: center;}
 
             .header {
-                padding: 20px;
+                width: 100%;
+                margin: 0 auto;
+                position: fixed;  
+                top: 0;
+                left: 0;
+                padding:5px;
                 text-align: center;
-                background: #003118;
-                color: white;
+                background: #070303;
                 font-size: 30px;
-                opacity: 80%;
+                opacity: 70%;
+                }
+            
+            .glow {
+                font-size: 50px;
+                color: #fff;
+                text-align: center;
+                animation: glow 4s ease-in-out infinite alternate;
                 }
 
-                                
+            @keyframes glow {
+                from {
+                    text-shadow: 0 0 10px rgb(255, 255, 255), 0 0 20px rgb(36, 27, 27), 0 0 30px #0e0808, 0 0 40px #000000, 0 0 50px #0c0909, 0 0 60px #000000, 0 0 70px #000000;
+                }
+                
+                to {
+                    text-shadow: 0 0 20px rgb(255, 255, 255), 0 0 30px #209ed8, 0 0 40px #1d77c0, 0 0 50px #0cdbff, 0 0 60px #29e6ff, 0 0 70px #11aabe, 0 0 80px #129bc5;
+                }
+            }
+                
             .bg {
-                /* The image used */
                 background-image: url("/static/images/mice3.jpg");
 
-                /* Full height */
                 height: 100%; 
-
-                /* Center and scale the image nicely */
+                background-attachment: fixed;
                 background-position: center;
                 background-repeat: no-repeat;
-                background-size: cover          }
+                background-size: 1680px 1050px     
+            }
+             
             
+            .wrapper {
+                top: 0%;
+                left: 0%;
+                width: 100%;
+                height: 100%;
+                text-align: center;
+                align-items: center;
+                justify-content: center;
+                }
+
+            .first{
+                margin: 200px 0px 0px 0px;
+            }
+
             .button {
                 position: relative;
                 background-color: #4CAF50;
@@ -74,14 +110,14 @@
                 background-color: white; 
                 color: black; 
                 border-radius: 10px;
-                opacity: 60%;
+                opacity: 50%;
                 /* border: 2px solid rgb(250, 0, 0) */
                 }
 
             .button1:hover {
                 transform: translateY(4px);
-                background-color: #f7ba15;
-                opacity: 100%;
+                background-color: #5a4d00;
+                opacity: 80%;
                 box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
                 color: white
                 }
@@ -90,65 +126,198 @@
                 background-color: white; 
                 color: black;
                 border-radius: 10px; 
-                opacity: 60%;
+                opacity: 50%;
                 /* border: 2px solid #008CBA */
                 }
 
             .button2:hover {
                 transform: translateY(4px);
-                background-color: #54ba00;
+                background-color: #6e0141;
                 box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
                 color: white;
-                opacity: 100%;
+                opacity: 80%;
                 }
                             
             .button3 {
                 background-color: white; 
                 color: black;
                 border-radius: 10px; 
-                opacity: 60%;
+                opacity: 50%;
                 /* border: 2px solid #008CBA */
                 }
 
             .button3:hover {
                 transform: translateY(4px);
-                background-color: #4100ba;
+                background-color: #130b83;
                 box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
                 color: white;
-                opacity: 100%;
+                opacity: 80%;
+                }
+            
+            .alert {
+                padding: 20px;
+                background-color: #ff514b;
+                color: white;
+                opacity: 1;
+                transition: opacity 0.6s;
+                margin-bottom: 15px;
                 }
 
+            .alert.success {background-color: #004900;}
+            .alert.info {background-color: #003158;}
+            .alert.warning {background-color: #bba800;}
 
+            .closebtn {
+                margin-left: 15px;
+                color: white;
+                font-weight: bold;
+                float: right;
+                font-size: 22px;
+                line-height: 20px;
+                cursor: pointer;
+                transition: 0.3s;
+                }
+
+            .closebtn:hover {
+                color: black;
+                }
+            
+            
+            input:disabled{
+                background-color:rgb(0, 0, 0);
+                }
+            
         </style>
     </head>
+    
     <body class="bg">
         <div >
-            <h1 class="header">Mice Protein Prediction</h1><br>
+            <h1 class="header glow">Mice Protein Prediction</h1><br>
         </div>
-        <div>
-            <form action="/upload_custom_files" method="POST" enctype="multipart/form-data">
-                <input class="button button1" id="file" type="file" name="file">
-                <button class="button button1" type="submit">Upload</button>
+        
+     
+        <div class="wrapper first">
+            <form  action="/upload_custom_files" method="POST" enctype="multipart/form-data">
+                <input class="button button1" id="file" type="file" name="file" multiple>
+                <button id="upload" class="button button1" type="submit">Upload</button>
             </form><br/>
-            
-            <p>{{ message }}</p><br/>
-            <p>{{ warn }}</p>
-            
-            <form action="/predict" method="POST">
-                <input type="submit" class="button button1" name="button" value="Predict My File">
-            </form><p> OR </p>
-            
-            <form action="/predict_default" method="POST">
-                <input type="submit" class="button button2" name="button" value="Predict Default Available File">
-            </form><br/>
-            
-            <form action="/download" method="POST">
-                <input type="submit" class="button button3" style="vertical-align:middle" name="button" value="download">
-            </form><br/>
-            
-            <h1> {{ head }} </h1><br/>
-            <p>{{ result }}</p>
+        
+            <form action="/predict"  method="POST">
+                <input type="submit" id=custom class="button button1" name="button" value="Predict My Files">
+            </form>
+
+            <p> OR </p>
+            <div id="loader" style="margin-top: 10px; display: none;">
+                <img src="/static/images/ajax-loader.gif">
+            </div>
         
         </div>
+        
+            
+        <div  class="wrapper">
+            <form action="/predict" method="POST">
+                <input id="default" type="submit" class="button button2" name="button" value="Predict Default Files">
+            </form><br/>
+
+            </br>
+        
+            <form action="/download" method="POST">
+                <input id="download" type="submit" class="button button3" style="vertical-align:middle" name="button" value="download">
+            </form><br/>
+            
+        </div>
+        
+        </br>
+        <div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                {% if category == "success" %}
+                    <div class="alert success">
+                        <span class="closebtn">&times;</span>  
+                        <strong>Success!  </strong> {{ message }}
+                    </div>
+                {% endif %}
+
+                {% if category == "warn" %}
+                    <div class="alert warning">
+                        <span class="closebtn">&times;</span>  
+                        <strong>Warning!  </strong> {{ message }}
+                    </div>
+                {% endif %}
+
+                {% if category == "error" %}
+                    <div class="alert">
+                        <span class="closebtn">&times;</span>  
+                        <strong>Error!  </strong> {{ message }}
+                    </div>
+                {% endif %}
+
+                {% if category == "info" %}
+                    <div class="alert info">
+                        <span class="closebtn">&times;</span>  
+                        <strong>Info!  </strong> {{ message }}
+                    </div>
+                {% endif %}
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+            
+        </div>
+        <script>
+            var close = document.getElementsByClassName("closebtn");
+            var i;
+            
+            for (i = 0; i < close.length; i++) {
+              close[i].onclick = function(){
+                var div = this.parentElement;
+                div.style.opacity = "0";
+                setTimeout(function(){ div.style.display = "none"; }, 600);
+              }
+            }
+        </script>
+        <script>
+            
+            $(document).ready(function() {
+
+                $('#default').on("click", function() {
+                
+                    $.ajax({
+                        type: "POST",
+
+                        beforeSend: function() {
+                            $("#loader").show();
+                            document.getElementById("download").disabled = true
+                            
+                        },
+                        sucess: function() {
+                            $("#loader").hide();
+                            document.getElementById("download").disabled = false
+                        }
+                    });
+                })
+            });
+        </script>
+        <script>
+            
+            $(document).ready(function() {
+
+                $('#custom').on("click", function() {
+                
+                    $.ajax({
+                        type: "POST",
+
+                        beforeSend: function() {
+                            $("#loader").show();
+                            document.getElementById("download").disabled = true
+                        },
+                        sucess: function() {
+                            $("#loader").hide();
+                            document.getElementById("download").disabled = false
+                        }
+                    });
+                })
+            });
+        </script>
     </body>
 </html>

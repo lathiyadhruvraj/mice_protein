@@ -1,18 +1,19 @@
 import pandas as pd
-
-
+import os
 class Data_Getter_Pred:
 
-    def __init__(self, file_object, logger_object):
-        self.prediction_file = 'Prediction_FileFromDB/InputFile.csv'
+    def __init__(self, file_object, logger_object, file):
+        self.prediction_file = 'Prediction_FileFromDB'
         self.file_object = file_object
         self.logger_object = logger_object
+        self.file = file
 
     def get_data(self):
 
         self.logger_object.log(self.file_object, 'Entered the get_data method of the Data_Getter class')
         try:
-            data = pd.read_csv(self.prediction_file)  # reading the data file
+
+            data = pd.read_csv(os.path.join(self.prediction_file, self.file))  # reading the data file
             self.logger_object.log(self.file_object,
                                    'Data Load Successful.Exited the get_data method of the Data_Getter class')
             return data

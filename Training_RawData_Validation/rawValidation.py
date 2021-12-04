@@ -147,12 +147,12 @@ class RawDataValidation:
         # delete the directories for good and bad data in case last run was unsuccessful and folders were not deleted.
         self.deleteExistingBadDataTrainingFolder()
         self.deleteExistingGoodDataTrainingFolder()
-
+        self.createDirectoryForGoodBadRawData()
         onlyfiles = [f for f in listdir(self.Batch_Directory)]
 
         try:
             # create new directories
-            self.createDirectoryForGoodBadRawData()
+            
             f = open("Training_Logs/nameValidationLog.txt", 'a+')
 
             for filename in onlyfiles:
